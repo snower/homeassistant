@@ -1,0 +1,13 @@
+{
+  "domain": "apparent_temperature",
+  "name": "Apparent Temperature",
+  "config_flow": false,
+  "version": "0.0.1",
+  "documentation": "https://github.com/snower/homeassistant",
+  "issue_tracker": "https://github.com/snower/homeassistant/issues",
+  "dependencies": ["sensor"],
+  "codeowners": [
+    "@snower"
+  ],
+  "requirements": []
+}
