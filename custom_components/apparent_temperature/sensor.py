@@ -74,9 +74,9 @@ class ApparentTSensor(Entity):
         except:
             self._outdoor_wind_resistance = 0.6
         try:
-            self._temperature_convection_coefficient = float(temperature_convection_coefficient) or 0.38
+            self._temperature_convection_coefficient = float(temperature_convection_coefficient) or 0.58
         except:
-            self._temperature_convection_coefficient = 0.38
+            self._temperature_convection_coefficient = 0.58
         try:
             self._humidity_convection_coefficient = float(humidity_convection_coefficient) or 1.24
         except:
@@ -134,7 +134,11 @@ class ApparentTSensor(Entity):
                 rh = (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * self._indoor_wind_speed - 2.7
-                tcc = (ot - t) / math.log2(abs(ot - t) + 2) * self._temperature_convection_coefficient
+                if ot >= t:
+                    tcc = math.atan((ot - t) / 16.0) * (1.3 + self._temperature_convection_coefficient)
+                else:
+                    tcc = min(math.atan((t - ot) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
+                              math.atan((t - ot) / 100.0) * (1.0 + self._temperature_convection_coefficient))
                 self._apparent_temperature = round(at + tcc, 2)
                 return
 
@@ -147,7 +151,11 @@ class ApparentTSensor(Entity):
                 rh = (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * wind_speed - 2.7
-                tcc = (ot - t) / math.log2(abs(ot - t) + 2) * self._temperature_convection_coefficient
+                if ot >= t:
+                    tcc = math.atan((ot - t) / 16.0) * (1.3 + self._temperature_convection_coefficient)
+                else:
+                    tcc = min(math.atan((t - ot) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
+                              math.atan((t - ot) / 100.0) * (1.0 + self._temperature_convection_coefficient))
                 self._apparent_temperature = round(at + tcc, 2)
                 return
 
