@@ -135,7 +135,7 @@ class ApparentTSensor(Entity):
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * self._indoor_wind_speed - 2.7
                 if ot >= t:
-                    tcc = math.atan((ot - t) / 16.0) * (1.3 + self._temperature_convection_coefficient)
+                    tcc = math.atan((ot - t) / 9.0) * (1.3 + self._temperature_convection_coefficient)
                 else:
                     tcc = min(math.atan((t - ot) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
                               math.atan((t - ot) / 100.0) * (1.0 + self._temperature_convection_coefficient))
@@ -152,7 +152,7 @@ class ApparentTSensor(Entity):
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * wind_speed - 2.7
                 if ot >= t:
-                    tcc = math.atan((ot - t) / 16.0) * (1.3 + self._temperature_convection_coefficient)
+                    tcc = math.atan((ot - t) / 9.0) * (1.3 + self._temperature_convection_coefficient)
                 else:
                     tcc = min(math.atan((t - ot) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
                               math.atan((t - ot) / 100.0) * (1.0 + self._temperature_convection_coefficient))
