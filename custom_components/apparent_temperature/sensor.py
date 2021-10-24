@@ -131,7 +131,7 @@ class ApparentTSensor(Entity):
                 ot = float(self._hass.states.get(self._outdoor_temperature_sensor).state)
                 oh = float(self._hass.states.get(self._outdoor_humidity_sensor).state)
 
-                rh = (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
+                rh = h + (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * self._indoor_wind_speed - 2.7
                 if ot >= t:
@@ -148,7 +148,7 @@ class ApparentTSensor(Entity):
                 oh = float(ws.attributes.get("humidity"))
                 wind_speed = float(ws.attributes.get("wind_speed", 1.65)) / 3.6 * self._outdoor_wind_resistance
 
-                rh = (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
+                rh = h + (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * wind_speed - 2.7
                 if ot >= t:
