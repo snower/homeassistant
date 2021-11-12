@@ -144,7 +144,7 @@ class ApparentTSensor(Entity):
                 if ot >= t:
                     tcc = max(math.atan((ot - t) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
                 else:
-                    tcc = min(math.atan((t - ot) / 7.0 + 1) * (1.0 + self._temperature_convection_coefficient),
+                    tcc = -min(math.atan((t - ot) / 7.0 + 1) * (1.0 + self._temperature_convection_coefficient),
                               math.atan((t - ot) / 40.0) * (1.0 + self._temperature_convection_coefficient))
                 self._apparent_temperature = round(at + tcc, 2)
                 return
@@ -161,7 +161,7 @@ class ApparentTSensor(Entity):
                 if ot >= t:
                     tcc = max(math.atan((ot - t) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
                 else:
-                    tcc = min(math.atan((t - ot) / 7.0 + 1) * (1.0 + self._temperature_convection_coefficient),
+                    tcc = -min(math.atan((t - ot) / 7.0 + 1) * (1.0 + self._temperature_convection_coefficient),
                               math.atan((t - ot) / 40.0) * (1.0 + self._temperature_convection_coefficient))
                 self._apparent_temperature = round(at + tcc, 2)
                 return
