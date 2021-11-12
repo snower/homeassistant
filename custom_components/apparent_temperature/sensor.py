@@ -31,6 +31,7 @@ CONF_OTS = "outdoor_temperature_sensor" #室外温度传感器实体ID
 CONF_OHS = "outdoor_humidity_sensor" #室外湿度传感器实体ID
 CONF_IDWS = "indoor_wind_speed" #室内风速
 CONF_ODWR = "outdoor_wind_resistance" #室外风阻系数
+CONF_HRC = "humidity_role_coefficient" #室内湿度影响系数
 CONF_TCC = "temperature_convection_coefficient" #温度对流系数
 CONF_HCC = "humidity_convection_coefficient" #湿度对流系数
 
@@ -45,6 +46,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_IDWS, default='0'): cv.string,
     vol.Optional(CONF_IDWS, default='0'): cv.string,
     vol.Optional(CONF_ODWR, default='0'): cv.string,
+    vol.Optional(CONF_HRC, default='0'): cv.string,
     vol.Optional(CONF_TCC, default='0'): cv.string,
     vol.Optional(CONF_HCC, default='0'): cv.string,
 })
@@ -54,7 +56,8 @@ class ApparentTSensor(Entity):
 
     def __init__(self, hass, name, unique_id, weather_sensor, temperature_sensor, humidity_sensor,
                  outdoor_temperature_sensor, outdoor_humidity_sensor, indoor_wind_speed,
-                 outdoor_wind_resistance, temperature_convection_coefficient, humidity_convection_coefficient):
+                 outdoor_wind_resistance, humidity_role_coefficient,
+                 temperature_convection_coefficient, humidity_convection_coefficient):
         """Initialize the AirCat sensor."""
 
         self._hass = hass
@@ -73,6 +76,10 @@ class ApparentTSensor(Entity):
             self._outdoor_wind_resistance = float(outdoor_wind_resistance) or 0.6
         except:
             self._outdoor_wind_resistance = 0.6
+        try:
+            self._humidity_role_coefficient = float(humidity_role_coefficient) or 1.0
+        except:
+            self._humidity_role_coefficient = 1.0
         try:
             self._temperature_convection_coefficient = float(temperature_convection_coefficient) or 0.58
         except:
@@ -117,7 +124,7 @@ class ApparentTSensor(Entity):
 
                 ws = self._hass.states.get(self._weather_sensor)
                 t = float(ws.attributes.get("temperature"))
-                h = float(ws.attributes.get("humidity"))
+                h = float(ws.attributes.get("humidity")) * self._humidity_role_coefficient
                 wind_speed = float(ws.attributes.get("wind_speed", 1.65)) / 3.6 * self._outdoor_wind_resistance
 
                 e = h / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
@@ -126,10 +133,10 @@ class ApparentTSensor(Entity):
                 return
 
             t = float(self._hass.states.get(self._temperature_sensor).state)
-            h = float(self._hass.states.get(self._humidity_sensor).state)
+            h = float(self._hass.states.get(self._humidity_sensor).state) * self._humidity_role_coefficient
             if self._outdoor_temperature_sensor and self._outdoor_humidity_sensor:
                 ot = float(self._hass.states.get(self._outdoor_temperature_sensor).state)
-                oh = float(self._hass.states.get(self._outdoor_humidity_sensor).state)
+                oh = float(self._hass.states.get(self._outdoor_humidity_sensor).state) * self._humidity_role_coefficient
 
                 rh = h + (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
                 e = rh / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
@@ -137,15 +144,15 @@ class ApparentTSensor(Entity):
                 if ot >= t:
                     tcc = max(math.atan((ot - t) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
                 else:
-                    tcc = min(math.atan((t - ot) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
-                              math.atan((t - ot) / 100.0) * (1.0 + self._temperature_convection_coefficient))
+                    tcc = min(math.atan((t - ot) / 7.0 + 1) * (1.0 + self._temperature_convection_coefficient),
+                              math.atan((t - ot) / 40.0) * (1.0 + self._temperature_convection_coefficient))
                 self._apparent_temperature = round(at + tcc, 2)
                 return
 
             if self._weather_sensor:
                 ws = self._hass.states.get(self._weather_sensor)
                 ot = float(ws.attributes.get("temperature"))
-                oh = float(ws.attributes.get("humidity"))
+                oh = float(ws.attributes.get("humidity")) * self._humidity_role_coefficient
                 wind_speed = float(ws.attributes.get("wind_speed", 1.65)) / 3.6 * self._outdoor_wind_resistance
 
                 rh = h + (oh - h) / math.log2(abs(oh - h) + 2) * self._humidity_convection_coefficient
@@ -154,8 +161,8 @@ class ApparentTSensor(Entity):
                 if ot >= t:
                     tcc = max(math.atan((ot - t) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
                 else:
-                    tcc = min(math.atan((t - ot) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
-                              math.atan((t - ot) / 100.0) * (1.0 + self._temperature_convection_coefficient))
+                    tcc = min(math.atan((t - ot) / 7.0 + 1) * (1.0 + self._temperature_convection_coefficient),
+                              math.atan((t - ot) / 40.0) * (1.0 + self._temperature_convection_coefficient))
                 self._apparent_temperature = round(at + tcc, 2)
                 return
 
@@ -177,11 +184,12 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     outdoor_humidity_sensor = config.get(CONF_OHS)
     indoor_wind_speed = config.get(CONF_IDWS)
     outdoor_wind_resistance = config.get(CONF_ODWR)
+    humidity_role_coefficient = config.get(CONF_HRC)
     temperature_convection_coefficient = config.get(CONF_TCC)
     humidity_convection_coefficient = config.get(CONF_HCC)
 
     add_devices([ApparentTSensor(
         hass, name, unique_id, weather_sensor, temperature_sensor, humidity_sensor, outdoor_temperature_sensor,
-        outdoor_humidity_sensor, indoor_wind_speed, outdoor_wind_resistance, temperature_convection_coefficient,
-        humidity_convection_coefficient
+        outdoor_humidity_sensor, indoor_wind_speed, outdoor_wind_resistance, humidity_role_coefficient,
+        temperature_convection_coefficient, humidity_convection_coefficient
     )])
