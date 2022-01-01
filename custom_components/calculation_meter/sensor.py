@@ -152,9 +152,10 @@ class CalculationMeterTSensor(RestoreEntity):
         return self._unit_of_measurement
 
     @property
-    def device_class(self) -> str | None:
+    def device_class(self):
         if self._unit_of_measurement == "kw/h":
             return DEVICE_CLASS_ENERGY
+        return super(CalculationMeterTSensor, self).device_class()
 
     @property
     def state(self):
