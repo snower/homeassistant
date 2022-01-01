@@ -132,11 +132,6 @@ class ApparentTSensor(RestoreEntity):
         return self._unit_of_measurement
 
     @property
-    def available(self):
-        """Return if the sensor data are available."""
-        return self._state != 0
-
-    @property
     def state(self):
         """返回当前的状态."""
         return self._state
