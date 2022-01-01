@@ -153,7 +153,7 @@ class CalculationMeterTSensor(RestoreEntity):
     def state(self):
         """返回当前的状态."""
         if self._calculation_unit and self._calculation_unit == "kw/h":
-            return self._state / 3600000.0
+            return round(self._state / 3600000.0, 3)
         return self._state
 
     @property
