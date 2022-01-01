@@ -5,7 +5,6 @@
 import time
 import logging
 import datetime
-from decimal import Decimal, DecimalException
 
 """
 Support for AirCat air sensor.
@@ -34,23 +33,26 @@ SCAN_INTERVAL = datetime.timedelta(seconds=_INTERVAL)
 
 CONF_UNIQUE_ID = "unique_id"
 CONF_CCS = "calculation_sensor" #来源传感器
+CONF_CCT = "calculation_unit" #单位
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_NAME): cv.string,
     vol.Optional(CONF_UNIQUE_ID, default=''): cv.string,
     vol.Required(CONF_CCS): cv.string,
+    vol.Optional(CONF_CCT, default='kw/h'): cv.string,
 })
 
 class ApparentTSensor(RestoreEntity):
     """Implementation of a AirCat sensor."""
 
-    def __init__(self, hass, name, unique_id, calculation_sensor):
+    def __init__(self, hass, name, unique_id, calculation_sensor, calculation_unit):
         """Initialize the AirCat sensor."""
 
         self._hass = hass
         self._name = name
         self._unique_id = unique_id
         self._calculation_sensor = calculation_sensor
+        self._calculation_unit = calculation_unit
         self._state = 0
         self._unit_of_measurement = None
         self._current_speed = None
@@ -74,13 +76,9 @@ class ApparentTSensor(RestoreEntity):
                 self._current_time = int(time.time())
             else:
                 self.update()
-            self._current_speed = Decimal(new_state.state)
+            self._current_speed = float(new_state.state)
         except ValueError as err:
             _LOGGER.warning("While processing state changes: %s", err)
-        except DecimalException as err:
-            _LOGGER.warning(
-                "Invalid state (%s > %s): %s", old_state.state, new_state.state, err
-            )
         self.async_schedule_update_ha_state()
 
     def update(self):
@@ -100,7 +98,9 @@ class ApparentTSensor(RestoreEntity):
 
         state = await self.async_get_last_state()
         if state:
-            self._state = Decimal(state.state)
+            self._state = float(state.state)
+            if self._calculation_unit and self._calculation_unit == "kw/h":
+                self._state *= 3600000.0
             self._unit_of_measurement = state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
             self._current_speed = state.attributes.get("current_speed")
             self._current_time = state.attributes.get("current_time")
@@ -129,11 +129,15 @@ class ApparentTSensor(RestoreEntity):
     @property
     def unit_of_measurement(self):
         """Return the unit the value is expressed in."""
+        if self._calculation_unit:
+            return self._calculation_unit
         return self._unit_of_measurement
 
     @property
     def state(self):
         """返回当前的状态."""
+        if self._calculation_unit and self._calculation_unit == "kw/h":
+            return self._state / 3600000.0
         return self._state
 
     @property
@@ -151,7 +155,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     name = config.get(CONF_NAME)
     unique_id = config.get(CONF_UNIQUE_ID)
     calculation_sensor = config.get(CONF_CCS)
+    calculation_unit = config.get(CONF_CCT)
 
     add_devices([ApparentTSensor(
-        hass, name, unique_id, calculation_sensor
+        hass, name, unique_id, calculation_sensor, calculation_unit
     )])
