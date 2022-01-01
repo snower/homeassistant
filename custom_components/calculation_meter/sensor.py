@@ -58,6 +58,7 @@ class ApparentTSensor(RestoreEntity):
         self._current_speed = None
         self._current_time = None
         self._collecting = None
+        self._reading_update = False
 
     @callback
     def async_reading(self, entity, old_state, new_state):
@@ -75,13 +76,28 @@ class ApparentTSensor(RestoreEntity):
             if self._current_speed is None or self._current_time is None:
                 self._current_time = int(time.time())
             else:
-                self.update()
+                self.calculate_state()
             self._current_speed = float(new_state.state)
         except ValueError as err:
             _LOGGER.warning("While processing state changes: %s", err)
+        self._reading_update = True
         self.async_schedule_update_ha_state()
 
     def update(self):
+        if self._reading_update:
+            self._reading_update = False
+            return
+
+        try:
+            self._current_speed = float(self._hass.states.get(self._calculation_sensor).state)
+            if self._current_time is None:
+                self._current_time = int(time.time())
+                return 
+        except Exception as err:
+            pass
+        self.calculate_state()
+
+    def calculate_state(self):
         try:
             if self._current_speed is None or self._current_time is None:
                 return
