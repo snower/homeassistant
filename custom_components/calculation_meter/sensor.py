@@ -155,7 +155,7 @@ class CalculationMeterTSensor(RestoreEntity):
     def device_class(self):
         if self._unit_of_measurement == "kw/h":
             return DEVICE_CLASS_ENERGY
-        return super(CalculationMeterTSensor, self).device_class()
+        return super(CalculationMeterTSensor, self).device_class
 
     @property
     def state(self):
