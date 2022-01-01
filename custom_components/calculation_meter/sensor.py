@@ -16,12 +16,13 @@ import voluptuous as vol
 from homeassistant.core import callback
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     EVENT_HOMEASSISTANT_START,
     STATE_UNKNOWN,
     STATE_UNAVAILABLE,
+    DEVICE_CLASS_ENERGY
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.const import CONF_NAME
@@ -61,17 +62,16 @@ class CalculationMeterTSensor(RestoreEntity):
         self._reading_update = False
 
     @callback
-    def async_reading(self, entity, old_state, new_state):
+    def async_reading(self, event):
         """Handle the sensor state changes."""
+        old_state = event.data.get("old_state")
+        new_state = event.data.get("new_state")
         if old_state is None or new_state is None \
                 or old_state.state in [STATE_UNKNOWN, STATE_UNAVAILABLE] \
                 or new_state.state in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
             return
 
-        if self._unit_of_measurement is None \
-                and new_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) is not None:
-            self._unit_of_measurement = new_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-
+        self._unit_of_measurement = new_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
         try:
             if self._current_speed is None or self._current_time is None:
                 self._current_time = int(time.time())
@@ -81,9 +81,11 @@ class CalculationMeterTSensor(RestoreEntity):
         except ValueError as err:
             _LOGGER.warning("While processing state changes: %s", err)
         self._reading_update = True
-        self.async_schedule_update_ha_state()
+        self.async_write_ha_state()
 
     def update(self):
+        if self._collecting is None:
+            return
         if self._reading_update:
             self._reading_update = False
             return
@@ -125,8 +127,8 @@ class CalculationMeterTSensor(RestoreEntity):
         @callback
         def async_source_tracking(event):
             """Wait for source to be ready, then start meter."""
-            self._collecting = async_track_state_change(
-                self.hass, self._calculation_sensor, self.async_reading
+            self._collecting = async_track_state_change_event(
+                self.hass, [self._calculation_sensor], self.async_reading
             )
 
         self.hass.bus.async_listen_once(
@@ -148,6 +150,11 @@ class CalculationMeterTSensor(RestoreEntity):
         if self._calculation_unit:
             return self._calculation_unit
         return self._unit_of_measurement
+
+    @property
+    def device_class(self) -> str | None:
+        if self._unit_of_measurement == "kw/h":
+            return DEVICE_CLASS_ENERGY
 
     @property
     def state(self):
