@@ -42,7 +42,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_CCT, default='kw/h'): cv.string,
 })
 
-class ApparentTSensor(RestoreEntity):
+class CalculationMeterTSensor(RestoreEntity):
     """Implementation of a AirCat sensor."""
 
     def __init__(self, hass, name, unique_id, calculation_sensor, calculation_unit):
@@ -92,7 +92,7 @@ class ApparentTSensor(RestoreEntity):
             self._current_speed = float(self._hass.states.get(self._calculation_sensor).state)
             if self._current_time is None:
                 self._current_time = int(time.time())
-                return 
+                return
         except Exception as err:
             pass
         self.calculate_state()
@@ -173,6 +173,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     calculation_sensor = config.get(CONF_CCS)
     calculation_unit = config.get(CONF_CCT)
 
-    add_devices([ApparentTSensor(
+    add_devices([CalculationMeterTSensor(
         hass, name, unique_id, calculation_sensor, calculation_unit
     )])
