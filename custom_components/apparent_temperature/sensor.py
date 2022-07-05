@@ -130,8 +130,7 @@ class ApparentTSensor(Entity):
                 e = h / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
                 at = 1.07 * t + 0.2 * e - 0.65 * wind_speed - 2.7
 
-                tcr = max(math.atan(abs(t - 24) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
-                self._apparent_temperature = round(at + tcr, 2)
+                self._apparent_temperature = round(at, 2)
                 return
 
             t = float(self._hass.states.get(self._temperature_sensor).state)
@@ -148,7 +147,7 @@ class ApparentTSensor(Entity):
                 else:
                     tcc = min(math.atan((ot - t) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
                               math.atan((ot - t) / 20.0) * (1.0 + self._temperature_convection_coefficient))
-                tcr = max(math.atan(abs(t - 24) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
+                tcr = max(math.atan(abs(ot - 24) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0) / 10.0
                 self._apparent_temperature = round(at + tcc + tcr, 2)
                 return
 
@@ -166,14 +165,13 @@ class ApparentTSensor(Entity):
                 else:
                     tcc = min(math.atan((ot - t) / 8.0 + 1) * (1.0 + self._temperature_convection_coefficient),
                               math.atan((ot - t) / 20.0) * (1.0 + self._temperature_convection_coefficient))
-                tcr = max(math.atan(abs(t - 24) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
+                tcr = max(math.atan(abs(ot - 24) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0) / 10.0
                 self._apparent_temperature = round(at + tcc + tcr, 2)
                 return
 
             e = h / 100 * 6.105 * math.exp((17.27 * t) / (237.7 + t))
             at = 1.07 * t + 0.2 * e - 0.65 * self._indoor_wind_speed - 2.7
-            tcr = max(math.atan(abs(t - 24) / 8.0 - 0.1) * (0.8 + self._temperature_convection_coefficient), 0)
-            self._apparent_temperature = round(at + tcr, 2)
+            self._apparent_temperature = round(at, 2)
         except Exception as e:
             _LOGGER.info('Can not calc apparent_temperature with %s %s %s %s %s %s', self._weather_sensor, self._temperature_sensor,
                          self._humidity_sensor, self._outdoor_temperature_sensor, self._outdoor_humidity_sensor, e)
