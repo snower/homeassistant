@@ -16,7 +16,7 @@ import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers import config_validation as cv
-from homeassistant.const import CONF_NAME, TEMP_CELSIUS
+from homeassistant.const import CONF_NAME, UnitOfTemperature
 
 _LOGGER = logging.getLogger(__name__)
 _INTERVAL = 15
@@ -102,7 +102,7 @@ class ApparentTSensor(Entity):
     @property
     def unit_of_measurement(self):
         """Return the unit the value is expressed in."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
     @property
     def available(self):
